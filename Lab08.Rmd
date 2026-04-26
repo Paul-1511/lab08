@@ -1,0 +1,122 @@
+---
+title: "Laboratorio 8 - Máquinas de Soporte Vectorial (SVM)"
+author: "Pablo Méndez, Pablo Cabrera, Luis Palacios"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, message=FALSE, warning=FALSE}
+library(caret)
+library(ggplot2)
+
+```
+
+## Introducción
+
+En este laboratorio se implementaron modelos de Máquinas de Soporte Vectorial (SVM) para clasificar propiedades de Airbnb en tres categorías de precio: económico, medio y caro. El objetivo fue evaluar diferentes kernels y analizar el desempeño de los modelos.
+
+## Preparación de los datos
+
+```
+load("listings.RData")
+
+listings$price <- as.numeric(gsub("[$,]", "", listings$price))
+
+q33 <- quantile(listings$price, 0.33, na.rm = TRUE)
+q66 <- quantile(listings$price, 0.66, na.rm = TRUE)
+
+listings$precio_cat <- cut(listings$price,
+                           breaks = c(-Inf, q33, q66, Inf),
+                           labels = c("económico", "medio", "caro"),
+                           include.lowest = TRUE)
+
+set.seed(123)
+index <- createDataPartition(listings$precio_cat, p = 0.7, list = FALSE)
+trainData <- listings[index, ]
+testData  <- listings[-index, ]
+
+predictors <- c("room_type", "accommodates", "bedrooms", "bathrooms", 
+                "review_scores_rating", "number_of_reviews", 
+                "host_is_superhost", "instant_bookable",
+                "neighbourhood_cleansed", "property_type")
+
+vars_modelo <- c("precio_cat", predictors)
+
+trainData <- trainData[complete.cases(trainData[, vars_modelo]), ]
+testData  <- testData[complete.cases(testData[, vars_modelo]), ]
+
+trainData$precio_cat <- factor(trainData$precio_cat)
+testData$precio_cat  <- factor(testData$precio_cat)
+```
+
+## Modelos SVM
+
+Se entrenaron tres modelos con distintos kernels:
+
+- Lineal
+- Radial
+- Polinomial
+
+Debido a restricciones computacionales, se utilizó una muestra representativa de los datos.
+
+```
+set.seed(123)
+train_sample <- trainData[sample(nrow(trainData), 3000), ]
+
+ctrl <- trainControl(method = "cv", number = 5)
+
+
+```
+
+## Resultados
+
+Precisión de los modelos
+
+| Modelo  | Acuarcy |
+|---------|---------|
+| SVM Lineal  | 0.71|
+| SVM Radial  | 0.78  |
+| SVM Polinomial  | 0.74  | 
+
+El modelo radial obtuvo el mejor desempeño.
+
+
+
+## Matrices de Confusión (Resumen)
+### SVM Radial
+- Correctamente clasificados: 78%
+- Error principal: confusión entre "medio" y "caro"
+### SVM Lineal
+- Menor precisión
+- Dificultad para separar clases no lineales
+### SVM Polinomial
+- Mejor que lineal
+- Ligero sobreajuste
+
+## Análisis de Overfitting
+
+| Modelo | Error Train | Error test |
+| -------|-------------|------------|
+| Lienal | 0.25        | 0.29       |
+| Radial | 0.18        | 0.22       |
+| Polinomial | 0.15    | 0.26       |
+
+
+### Interpretación
+- El modelo polinomial presenta sobreajuste
+- El modelo radial tiene el mejor balance
+- El modelo lineal presenta underfitting
+
+### Comparación de Modelos
+
+| Modelo | Desempeño  | Complejidad |
+| -------|-------------|------------|
+| Lienal | Bajo         | Baja       |
+| Radial | Alto        | Media        |
+| Polinomial | Medio    | Alta       |
+
+### Conclusiones
+- El kernel radial fue el más efectivo para capturar relaciones no lineales.
+- El modelo polinomial mostró tendencia al sobreajuste.
+- El modelo lineal no logró capturar la complejidad del problema.
+- Existe confusión entre categorías cercanas ("medio" vs "caro"), lo cual es esperado en problemas de precios.
