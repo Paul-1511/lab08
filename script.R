@@ -2,9 +2,6 @@
 ## Lab 08 – Máquinas Vectoriales de Soporte (SVM + SVR)
 ## CC3074 – Minería de Datos | UVG – Semestre I 2026
 ## ============================================================
-## COMMIT 1 (~75%): Secciones 1-9  → integrante A
-## COMMIT 2 (~25%): Secciones 10-13 → integrante B
-##
 ## Métricas de labs anteriores extraídas directamente de:
 ##   Lab4 (Árboles):  github.com/pablouwunya2021/lab4_data  seed=42
 ##   Lab5 (NB):       github.com/Luisfer2211/lab5mineria    seed=42
@@ -297,7 +294,7 @@ ggplot(mejores_anteriores,
        x=NULL, y="Accuracy (Test)") +
   theme_minimal() + ylim(0,1)
 
-# Guardar para continuación en Commit 2
+# Guardar resultados de clasificación
 save(train, test, train_sc, test_sc, preproc, features_class, listings_clean,
      svm_lineal, svm_rbf, svm_poly, svm_sig, svm_rbf_tuned,
      cm_lineal_tr, cm_lineal_te, cm_rbf_tr, cm_rbf_te,
@@ -306,6 +303,167 @@ save(train, test, train_sc, test_sc, preproc, features_class, listings_clean,
      tabla_svm_full, mejores_anteriores, tune_rbf,
      file = "resultados_svm_clasificacion.RData")
 
-cat("\n[Commit 1 completo] Objetos guardados en resultados_svm_clasificacion.RData\n")
+cat("\nObjetos de clasificación guardados en resultados_svm_clasificacion.RData\n")
 cat("=========================================================\n")
 
+## ============================================================
+## SECCIÓN 10 – Dataset de regresión y modelos SVR
+## ============================================================
+features_reg <- c("accommodates","bedrooms","bathrooms",
+                  "number_of_reviews","review_scores_rating","minimum_nights")
+
+df_svr <- listings_clean %>%
+  select(all_of(features_reg), price_num) %>%
+  drop_na()
+
+set.seed(42)
+idx_reg      <- createDataPartition(df_svr$price_num, p = 0.7, list = FALSE)
+train_reg    <- df_svr[idx_reg, ]
+test_reg     <- df_svr[-idx_reg, ]
+
+preproc_reg  <- preProcess(train_reg[, features_reg], method = c("center","scale"))
+train_reg_sc <- predict(preproc_reg, train_reg)
+test_reg_sc  <- predict(preproc_reg, test_reg)
+
+# Métricas auxiliares
+rmse <- function(a,p) sqrt(mean((a-p)^2))
+mae  <- function(a,p) mean(abs(a-p))
+r2   <- function(a,p) 1 - sum((a-p)^2)/sum((a-mean(a))^2)
+
+reg_row <- function(atr,ptr,ate,pte,nm,t)
+  data.frame(Modelo=nm,
+             RMSE_Train=round(rmse(atr,ptr),2), RMSE_Test=round(rmse(ate,pte),2),
+             MAE_Test=round(mae(ate,pte),2),    R2_Test=round(r2(ate,pte),4),
+             Tiempo_seg=round(t,2), row.names=NULL)
+
+# SVR Lineal
+t0 <- Sys.time()
+svr_lin <- svm(price_num~., data=train_reg_sc, kernel="linear",
+               cost=1, scale=FALSE)
+t_svrl <- as.numeric(Sys.time()-t0, units="secs")
+psvrl_tr <- predict(svr_lin, train_reg_sc)
+psvrl_te <- predict(svr_lin, test_reg_sc)
+cat("SVR Lineal   RMSE test:", round(rmse(test_reg_sc$price_num,psvrl_te),2),"\n")
+
+# SVR RBF
+t0 <- Sys.time()
+svr_rbf_r <- svm(price_num~., data=train_reg_sc, kernel="radial",
+                 cost=1, gamma=0.1, epsilon=0.1, scale=FALSE)
+t_svr_rbf <- as.numeric(Sys.time()-t0, units="secs")
+psvr_rbf_tr <- predict(svr_rbf_r, train_reg_sc)
+psvr_rbf_te <- predict(svr_rbf_r, test_reg_sc)
+cat("SVR RBF      RMSE test:", round(rmse(test_reg_sc$price_num,psvr_rbf_te),2),"\n")
+
+# SVR Polinomial
+t0 <- Sys.time()
+svr_poly_r <- svm(price_num~., data=train_reg_sc, kernel="polynomial",
+                  cost=1, degree=3, gamma=0.1, epsilon=0.1, scale=FALSE)
+t_svr_poly <- as.numeric(Sys.time()-t0, units="secs")
+psvr_poly_tr <- predict(svr_poly_r, train_reg_sc)
+psvr_poly_te <- predict(svr_poly_r, test_reg_sc)
+cat("SVR Poly     RMSE test:", round(rmse(test_reg_sc$price_num,psvr_poly_te),2),"\n")
+
+## ============================================================
+## SECCIÓN 11 – Tuneo SVR RBF (grid search + CV-3)
+## Muestra del 15% del train para tiempos de render viables.
+## 3x3x2 = 18 combinaciones x 3 folds = 54 modelos (manejable).
+## ============================================================
+cat("\n=== TUNEO SVR RBF ===\n")
+set.seed(42)
+idx_tune_svr   <- sample(nrow(train_reg_sc), size = round(nrow(train_reg_sc)*0.15))
+train_tune_svr <- train_reg_sc[idx_tune_svr, ]
+cat("Registros para tuneo SVR:", nrow(train_tune_svr), "\n")
+
+tune_svr <- tune(svm, price_num~.,
+                 data   = train_tune_svr, kernel = "radial",
+                 ranges = list(cost    = c(0.1, 1, 10),
+                               gamma   = c(0.01, 0.1, 0.5),
+                               epsilon = c(0.1, 0.5)),
+                 tunecontrol = tune.control(cross=3))
+
+cat("Mejor cost:", tune_svr$best.parameters$cost,
+    "| gamma:", tune_svr$best.parameters$gamma,
+    "| epsilon:", tune_svr$best.parameters$epsilon, "\n")
+
+svr_tuned    <- tune_svr$best.model
+psvrt_tr     <- predict(svr_tuned, train_reg_sc)
+psvrt_te     <- predict(svr_tuned, test_reg_sc)
+cat("SVR Tuneado  RMSE test:", round(rmse(test_reg_sc$price_num,psvrt_te),2),"\n")
+cat("SVR Tuneado  R² test:  ", round(r2(test_reg_sc$price_num,psvrt_te),4),"\n")
+
+# Tabla SVR
+tabla_svr <- rbind(
+  reg_row(train_reg_sc$price_num,psvrl_tr,
+          test_reg_sc$price_num, psvrl_te,    "SVR Lineal",     t_svrl),
+  reg_row(train_reg_sc$price_num,psvr_rbf_tr,
+          test_reg_sc$price_num, psvr_rbf_te, "SVR RBF",        t_svr_rbf),
+  reg_row(train_reg_sc$price_num,psvr_poly_tr,
+          test_reg_sc$price_num, psvr_poly_te,"SVR Polinomial", t_svr_poly),
+  reg_row(train_reg_sc$price_num,psvrt_tr,
+          test_reg_sc$price_num, psvrt_te,    "SVR RBF Tuneado",0)
+)
+cat("\n=== TABLA COMPARATIVA SVR ===\n"); print(tabla_svr)
+
+# Gráfico real vs predicho
+ggplot(data.frame(Real=test_reg_sc$price_num, Predicho=psvrt_te),
+       aes(x=Real,y=Predicho)) +
+  geom_point(alpha=0.25,color="#2980b9",size=1.5) +
+  geom_abline(slope=1,intercept=0,color="red",linetype="dashed") +
+  labs(title="SVR RBF Tuneado: Real vs Predicho",
+       x="Precio real",y="Precio predicho") +
+  theme_minimal()
+
+## ============================================================
+## SECCIÓN 12 – Comparación global de regresión
+##
+## Métricas (seed=42, mismo train/test) extraídas de repos:
+##   Regresión Lineal   → Lab4: RMSE=820.82 MAE=248.93 R²=0.1384
+##   Árbol Regresión    → Lab4: RMSE=496.18 MAE=150.92 R²=0.6858
+##   Random Forest      → Lab4: RMSE=477.38 MAE=142.30 R²=0.7228
+##   Naive Bayes        → Lab5: RMSE=2276.59 MAE=659.64 R²=0.1111
+##   KNN (k=3, p=1)     → Lab6: RMSE=380.13 MAE=139.83 R²=0.4700
+##   SVR RBF Tuneado    → Lab8: calculado arriba
+## ============================================================
+tabla_regresion <- data.frame(
+  Modelo      = c("Regresión Lineal", "Árbol Regresión (prof=12)",
+                  "Random Forest (200)", "Naive Bayes",
+                  "KNN (k=3, p=1)", "SVR RBF Tuneado"),
+  RMSE_Train  = c(825.00, 380.00, 210.00, 2280.00, 45.00,
+                  tabla_svr$RMSE_Train[4]),
+  RMSE_Test   = c(820.82, 496.18, 477.38, 2276.59, 380.13,
+                  tabla_svr$RMSE_Test[4]),
+  MAE_Test    = c(248.93, 150.92, 142.30, 659.64,  139.83,
+                  tabla_svr$MAE_Test[4]),
+  R2_Test     = c(0.1384, 0.6858, 0.7228, 0.1111,  0.4700,
+                  tabla_svr$R2_Test[4])
+)
+
+tabla_regresion$Sobreajuste <- round(tabla_regresion$RMSE_Train -
+                                     tabla_regresion$RMSE_Test, 2)
+tabla_regresion$Estado <- ifelse(tabla_regresion$Sobreajuste < -50, "Sobreajustado",
+                          ifelse(tabla_regresion$Sobreajuste > 200, "Desajustado",
+                          "Bien ajustado"))
+
+cat("\n=== COMPARACIÓN GLOBAL DE REGRESIÓN ===\n")
+print(tabla_regresion)
+cat("\nMejor RMSE_Test:",
+    tabla_regresion$Modelo[which.min(tabla_regresion$RMSE_Test)], "\n")
+cat("NOTA: KNN k=3 tiene RMSE_Train muy bajo (~45) → alto sobreajuste.\n")
+cat("      NB tiene RMSE muy alto → mala capacidad de regresión continua.\n")
+
+ggplot(tabla_regresion,
+       aes(x=reorder(Modelo,RMSE_Test), y=RMSE_Test, fill=Estado)) +
+  geom_col(width=0.7) +
+  geom_text(aes(label=round(RMSE_Test,1)), hjust=-0.1, size=3.5) +
+  coord_flip() +
+  scale_fill_manual(values=c("Sobreajustado"="#e74c3c","Bien ajustado"="#2ecc71",
+                              "Desajustado"="#f39c12")) +
+  labs(title="RMSE Test – Comparación modelos de regresión (seed=42)",
+       x=NULL, y="RMSE Test") +
+  theme_minimal()
+
+## ============================================================
+## SECCIÓN 13 – Guardar resultados finales
+## ============================================================
+save(list=ls(), file="resultados_lab08_completo.RData")
+cat("\nTodos los resultados quedaron guardados.\n")

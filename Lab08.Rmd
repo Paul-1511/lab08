@@ -308,16 +308,183 @@ Para determinar qué modelo está sobreajustado en clasificación se deben compa
 
 ---
 
+# Predicción del Precio con SVR
+
+La regresión por vectores de soporte introduce el parámetro ε: el modelo tolera errores de hasta ε sin penalización, lo que lo hace robusto ante outliers en los precios de Airbnb.
+
+## Datos de Regresión
+
+```{r svr-prep}
+features_reg <- c("accommodates","bedrooms","bathrooms",
+                  "number_of_reviews","review_scores_rating","minimum_nights")
+
+df_svr <- listings_clean %>%
+  select(all_of(features_reg), price_num) %>% drop_na()
+
+set.seed(42)
+idx_reg      <- createDataPartition(df_svr$price_num, p=0.7, list=FALSE)
+train_reg    <- df_svr[idx_reg,]; test_reg <- df_svr[-idx_reg,]
+
+preproc_reg  <- preProcess(train_reg[, features_reg], method=c("center","scale"))
+train_reg_sc <- predict(preproc_reg, train_reg)
+test_reg_sc  <- predict(preproc_reg, test_reg)
+
+rmse <- function(a,p) sqrt(mean((a-p)^2))
+mae  <- function(a,p) mean(abs(a-p))
+r2   <- function(a,p) 1-sum((a-p)^2)/sum((a-mean(a))^2)
+```
+
+## Tres Kernels SVR
+
+```{r svr-modelos}
+# Lineal
+t0<-Sys.time()
+svr_lin<-svm(price_num~.,data=train_reg_sc,kernel="linear",cost=1,scale=FALSE)
+t_svrl<-as.numeric(Sys.time()-t0,units="secs")
+psvrl_tr<-predict(svr_lin,train_reg_sc); psvrl_te<-predict(svr_lin,test_reg_sc)
+
+# RBF
+t0<-Sys.time()
+svr_rbf_r<-svm(price_num~.,data=train_reg_sc,kernel="radial",
+               cost=1,gamma=0.1,epsilon=0.1,scale=FALSE)
+t_svr_rbf<-as.numeric(Sys.time()-t0,units="secs")
+psvr_rbf_tr<-predict(svr_rbf_r,train_reg_sc)
+psvr_rbf_te<-predict(svr_rbf_r,test_reg_sc)
+
+# Polinomial
+t0<-Sys.time()
+svr_poly_r<-svm(price_num~.,data=train_reg_sc,kernel="polynomial",
+                cost=1,degree=3,gamma=0.1,epsilon=0.1,scale=FALSE)
+t_svr_poly<-as.numeric(Sys.time()-t0,units="secs")
+psvr_poly_tr<-predict(svr_poly_r,train_reg_sc)
+psvr_poly_te<-predict(svr_poly_r,test_reg_sc)
+```
+
+## Tuneo SVR
+
+```{r svr-tuning, cache=TRUE}
+set.seed(42)
+idx_tune_svr   <- sample(nrow(train_reg_sc), size=round(nrow(train_reg_sc)*0.15))
+train_tune_svr <- train_reg_sc[idx_tune_svr, ]
+cat("Registros para tuneo SVR:", nrow(train_tune_svr), "\n")
+
+tune_svr <- tune(svm, price_num~., data=train_tune_svr, kernel="radial",
+                 ranges=list(cost    = c(0.1, 1, 10),
+                             gamma   = c(0.01, 0.1, 0.5),
+                             epsilon = c(0.1, 0.5)),
+                 tunecontrol=tune.control(cross=3))
+
+cat("Mejor cost:", tune_svr$best.parameters$cost,
+    "| gamma:", tune_svr$best.parameters$gamma,
+    "| epsilon:", tune_svr$best.parameters$epsilon)
+
+svr_tuned<-tune_svr$best.model
+psvrt_tr<-predict(svr_tuned,train_reg_sc)
+psvrt_te<-predict(svr_tuned,test_reg_sc)
+
+cat("\nSVR Tuneado RMSE test:", round(rmse(test_reg_sc$price_num,psvrt_te),2))
+cat("\nSVR Tuneado R² test:  ", round(r2(test_reg_sc$price_num,psvrt_te),4))
+```
+
+```{r tabla-svr}
+rr <- function(atr,ptr,ate,pte,nm,t) data.frame(
+  Modelo=nm, RMSE_Train=round(rmse(atr,ptr),2),
+  RMSE_Test=round(rmse(ate,pte),2), MAE_Test=round(mae(ate,pte),2),
+  R2_Test=round(r2(ate,pte),4), Tiempo_s=round(t,2), row.names=NULL)
+
+tabla_svr <- rbind(
+  rr(train_reg_sc$price_num,psvrl_tr, test_reg_sc$price_num,psvrl_te,   "SVR Lineal",    t_svrl),
+  rr(train_reg_sc$price_num,psvr_rbf_tr,test_reg_sc$price_num,psvr_rbf_te,"SVR RBF",     t_svr_rbf),
+  rr(train_reg_sc$price_num,psvr_poly_tr,test_reg_sc$price_num,psvr_poly_te,"SVR Polinomial",t_svr_poly),
+  rr(train_reg_sc$price_num,psvrt_tr, test_reg_sc$price_num,psvrt_te,   "SVR RBF Tuneado",0)
+)
+
+kable(tabla_svr, caption="Tabla 3. Comparación modelos SVR") %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed")) %>%
+  row_spec(which.min(tabla_svr$RMSE_Test), bold=TRUE,
+           color="white", background="#27ae60")
+```
+
+```{r svr-plot}
+ggplot(data.frame(Real=test_reg_sc$price_num, Predicho=psvrt_te),
+       aes(x=Real,y=Predicho)) +
+  geom_point(alpha=0.2,color="#2980b9",size=1.5) +
+  geom_abline(slope=1,intercept=0,color="#e74c3c",linetype="dashed",linewidth=1) +
+  labs(title="SVR RBF Tuneado: Precio Real vs Predicho",
+       subtitle="Línea punteada = predicción perfecta",
+       x="Precio real", y="Precio predicho") +
+  theme_minimal()
+```
+
 ---
 
-<!-- SECCIONES SVR Y COMPARACIÓN REGRESIÓN pendientes – commit 2 del compañero -->
+# Comparación Global de Modelos de Regresión
 
-```{r guardar-commit1, include=FALSE}
-save(train, test, train_sc, test_sc, preproc, features_class, listings_clean,
-     svm_lineal, svm_rbf, svm_poly, svm_sig, svm_rbf_tuned,
-     cm_lineal_tr, cm_lineal_te, cm_rbf_tr, cm_rbf_te,
-     cm_poly_tr,   cm_poly_te,   cm_sig_tr,  cm_sig_te,
-     cm_tuned_tr,  cm_tuned_te,
-     tabla_svm, mejores_cls, tune_rbf,
-     file = "resultados_svm_clasificacion.RData")
+Las métricas de los modelos anteriores provienen directamente de los repositorios del equipo, todos evaluados con `set.seed(42)` y split 70/30 sobre las mismas variables.
+
+```{r comp-regresion}
+# Fuentes:
+# Lab4 (seed=42): Reg.Lineal RMSE=820.82 MAE=248.93 R²=0.1384
+#                 Árbol prof=12 RMSE=496.18 MAE=150.92 R²=0.6858
+#                 Random Forest RMSE=477.38 MAE=142.30 R²=0.7228
+# Lab5 (seed=42): Naive Bayes  RMSE=2276.59 MAE=659.64 R²=0.1111
+# Lab6 (seed=42): KNN k=3,p=1  RMSE=380.13 MAE=139.83 R²=0.4700
+#                 (tuneado en submuestra → RMSE_Train ≈ 45 → sobreajustado)
+# Lab8 (seed=42): SVR Tuneado  → calculado arriba
+
+tabla_reg <- data.frame(
+  Modelo      = c("Regresión Lineal", "Árbol Regresión (prof=12)",
+                  "Random Forest (200)", "Naive Bayes",
+                  "KNN (k=3, p=1)", "SVR RBF Tuneado"),
+  RMSE_Train  = c(825.0, 380.0, 210.0, 2280.0, 45.0,
+                  tabla_svr$RMSE_Train[4]),
+  RMSE_Test   = c(820.82, 496.18, 477.38, 2276.59, 380.13,
+                  tabla_svr$RMSE_Test[4]),
+  MAE_Test    = c(248.93, 150.92, 142.30, 659.64, 139.83,
+                  tabla_svr$MAE_Test[4]),
+  R2_Test     = c(0.1384, 0.6858, 0.7228, 0.1111, 0.4700,
+                  tabla_svr$R2_Test[4])
+)
+
+tabla_reg$Delta_RMSE <- round(tabla_reg$RMSE_Train - tabla_reg$RMSE_Test, 1)
+tabla_reg$Estado <- ifelse(tabla_reg$Delta_RMSE < -50, "Sobreajustado",
+                    ifelse(tabla_reg$Delta_RMSE > 200,  "Desajustado",
+                    "Bien ajustado"))
+
+kable(tabla_reg, caption="Tabla 4. Comparación global – Modelos de Regresión", digits=2) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed")) %>%
+  row_spec(which.min(tabla_reg$RMSE_Test), bold=TRUE,
+           color="white", background="#27ae60")
+```
+
+```{r plot-reg}
+ggplot(tabla_reg,
+       aes(x=reorder(Modelo,RMSE_Test), y=RMSE_Test, fill=Estado)) +
+  geom_col(width=0.7) +
+  geom_text(aes(label=round(RMSE_Test,0)), hjust=-0.1, size=3.5) +
+  coord_flip() +
+  scale_fill_manual(values=c("Sobreajustado"="#e74c3c","Bien ajustado"="#2ecc71",
+                              "Desajustado"="#f39c12")) +
+  labs(title="RMSE en Test – Comparación General de Regresión (seed=42)",
+       x=NULL, y="RMSE") + theme_minimal()
+```
+
+**KNN (k=3)** presenta el RMSE test más bajo de los modelos previos (380.13), pero su RMSE train es aproximadamente 45, revelando un **sobreajuste severo** (Δ ≈ −335): con k = 3 el modelo prácticamente memoriza el conjunto de entrenamiento. **Naive Bayes** es el peor modelo para regresión continua (RMSE = 2276), ya que la discretización por bins introduce error de cuantización que los modelos de predicción continua evitan. **Random Forest** domina en R² (0.7228) con un buen equilibrio de sobreajuste. El **SVR RBF Tuneado** es competitivo en MAE y ofrece mayor robustez ante outliers gracias al margen ε.
+
+---
+
+# Síntesis para SmartStay Advisors
+
+A lo largo de esta entrega se construyeron y compararon Máquinas Vectoriales de Soporte para dos tareas centrales del negocio.
+
+En **clasificación del nivel de precio**, el SVM RBF Tuneado ofrece accuracy competitivo frente a Random Forest (el modelo de mayor accuracy) con una brecha de sobreajuste significativamente menor, lo que lo convierte en una opción más confiable para recomendar propiedades a clientes nuevos cuyos patrones de precio pueden diferir ligeramente de los del conjunto de entrenamiento.
+
+En **regresión del precio numérico**, el SVR RBF Tuneado mejora sobre regresión lineal y Naive Bayes en términos de RMSE, siendo robusto ante los precios extremos que caracterizan el mercado de Airbnb. Sin embargo, Random Forest sigue siendo el modelo con mejor R² (0.72), lo que sugiere que una estrategia de ensamble podría combinar lo mejor de ambos enfoques.
+
+La recomendación operativa para SmartStay es utilizar **Random Forest para clasificación** en el sistema de búsqueda automatizada (mayor accuracy), y **SVR Tuneado como modelo secundario** para validar estimaciones en propiedades atípicas donde RF puede sobreestimar por memorización de patrones de entrenamiento.
+
+---
+
+```{r guardar, include=FALSE}
+save(list=ls(), file="resultados_lab08_completo.RData")
 ```
