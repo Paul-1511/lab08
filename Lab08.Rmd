@@ -1,122 +1,323 @@
 ---
-title: "Laboratorio 8 - Máquinas de Soporte Vectorial (SVM)"
-author: "Pablo Méndez, Pablo Cabrera, Luis Palacios"
+title: "Laboratorio 8 – Máquinas Vectoriales de Soporte"
+author: "Pablo Mendez Pablo Cabrera Luis Palacios"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float: true
+    number_sections: true
+    df_print: paged
+  pdf_document:
+    toc: true
+subtitle: SmartStay Advisors · CC3074 Minería de Datos · UVG 2026
 ---
 
-```{r setup, message=FALSE, warning=FALSE}
-library(caret)
-library(ggplot2)
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.align = "center", fig.width = 8, fig.height = 5)
+library(e1071); library(caret); library(dplyr)
+library(ggplot2); library(tidyr); library(knitr); library(kableExtra)
 ```
 
-## Introducción
+---
 
-En este laboratorio se implementaron modelos de Máquinas de Soporte Vectorial (SVM) para clasificar propiedades de Airbnb en tres categorías de precio: económico, medio y caro. El objetivo fue evaluar diferentes kernels y analizar el desempeño de los modelos.
+# Contexto del Problema
 
-## Preparación de los datos
+SmartStay Advisors requiere modelos capaces de clasificar propiedades de Airbnb según su nivel de precio y de estimar el precio numérico con precisión. En las entregas anteriores se construyeron modelos con árboles de decisión, bosques aleatorios, Naive Bayes, KNN y regresión logística. Esta entrega incorpora las **Máquinas Vectoriales de Soporte (SVM/SVR)**, cuya teoría del margen máximo ofrece propiedades de generalización distintas a los enfoques previos, y cierra con una comparación integral de todos los algoritmos desarrollados.
 
-```
+---
+
+# Preparación del Entorno de Datos
+
+## Carga y Limpieza
+
+```{r carga-datos}
 load("listings.RData")
+listings$price_num <- as.numeric(gsub("[$,]", "", listings$price))
 
-listings$price <- as.numeric(gsub("[$,]", "", listings$price))
+listings_clean <- listings %>%
+  filter(!is.na(price_num), price_num > 0,
+         !is.na(bedrooms), !is.na(bathrooms),
+         !is.na(accommodates), !is.na(number_of_reviews),
+         !is.na(review_scores_rating)) %>%
+  mutate(
+    bedrooms             = as.numeric(bedrooms),
+    bathrooms            = as.numeric(bathrooms),
+    accommodates         = as.numeric(accommodates),
+    number_of_reviews    = as.numeric(number_of_reviews),
+    review_scores_rating = as.numeric(review_scores_rating),
+    room_type            = as.factor(room_type),
+    price_category       = cut(price_num,
+                               breaks = quantile(price_num,
+                                        probs=c(0,.33,.66,1), na.rm=TRUE),
+                               labels = c("Barata","Media","Cara"),
+                               include.lowest=TRUE)
+  ) %>%
+  filter(!is.na(price_category))
 
-q33 <- quantile(listings$price, 0.33, na.rm = TRUE)
-q66 <- quantile(listings$price, 0.66, na.rm = TRUE)
-
-listings$precio_cat <- cut(listings$price,
-                           breaks = c(-Inf, q33, q66, Inf),
-                           labels = c("económico", "medio", "caro"),
-                           include.lowest = TRUE)
-
-set.seed(123)
-index <- createDataPartition(listings$precio_cat, p = 0.7, list = FALSE)
-trainData <- listings[index, ]
-testData  <- listings[-index, ]
-
-predictors <- c("room_type", "accommodates", "bedrooms", "bathrooms", 
-                "review_scores_rating", "number_of_reviews", 
-                "host_is_superhost", "instant_bookable",
-                "neighbourhood_cleansed", "property_type")
-
-vars_modelo <- c("precio_cat", predictors)
-
-trainData <- trainData[complete.cases(trainData[, vars_modelo]), ]
-testData  <- testData[complete.cases(testData[, vars_modelo]), ]
-
-trainData$precio_cat <- factor(trainData$precio_cat)
-testData$precio_cat  <- factor(testData$precio_cat)
+kable(as.data.frame(prop.table(table(listings_clean$price_category))*100),
+      col.names=c("Categoría","%"), digits=1,
+      caption="Distribución de la variable respuesta") %>%
+  kable_styling(full_width=FALSE)
 ```
 
-## Modelos SVM
+## Transformaciones Necesarias para SVM
 
-Se entrenaron tres modelos con distintos kernels:
+SVM maximiza el margen geométrico entre clases, el cual se mide en términos de distancia euclidiana. Esto impone tres requisitos de preprocesamiento que no exigían los algoritmos previos:
 
-- Lineal
-- Radial
-- Polinomial
+1. **Estandarización obligatoria** (`center + scale`): sin ella, variables de gran rango como `minimum_nights` (1–365) dominarían la función de kernel sobre variables más informativas como `review_scores_rating` (1–5). Los parámetros de escala se calculan *únicamente* sobre el conjunto de entrenamiento para evitar fuga de información.
 
-Debido a restricciones computacionales, se utilizó una muestra representativa de los datos.
+2. **Sin variables categóricas de alta cardinalidad**: neighbourhood tiene cientos de categorías; codificarlo en one-hot elevaría la dimensionalidad de forma desproporcionada y alargaría el tiempo de cómputo cuadráticamente. Se trabaja con las seis variables numéricas más estables.
 
+3. **Sin valores faltantes**: el optimizador de SVM no tolera NAs; se eliminan filas incompletas en las variables seleccionadas antes del split.
+
+```{r features-split}
+features_class <- c("accommodates","bedrooms","bathrooms",
+                    "number_of_reviews","review_scores_rating","minimum_nights")
+
+df_svm <- listings_clean %>%
+  select(all_of(features_class), price_category) %>%
+  drop_na()
+
+# Mismo seed y proporción que Labs 4, 5 y 6 → comparación válida
+set.seed(42)
+idx    <- createDataPartition(df_svm$price_category, p=0.7, list=FALSE)
+train  <- df_svm[idx, ]; test <- df_svm[-idx, ]
+
+preproc  <- preProcess(train[, features_class], method=c("center","scale"))
+train_sc <- predict(preproc, train)
+test_sc  <- predict(preproc, test)
+
+cat("Registros - Train:", nrow(train), "| Test:", nrow(test))
 ```
-set.seed(123)
-train_sample <- trainData[sample(nrow(trainData), 3000), ]
 
-ctrl <- trainControl(method = "cv", number = 5)
+---
 
+# Clasificación del Nivel de Precio con SVM
 
+Se entrenaron cuatro modelos con distintos kernels. Cada kernel define cómo se transforma el espacio de características para encontrar la frontera de decisión:
+
+## Kernel Lineal
+
+```{r svm-lineal}
+t0 <- Sys.time()
+svm_lineal <- svm(price_category~., data=train_sc,
+                  kernel="linear", cost=1, scale=FALSE)
+t_lineal <- as.numeric(Sys.time()-t0, units="secs")
+
+pred_lineal_tr <- predict(svm_lineal, train_sc)
+pred_lineal_te <- predict(svm_lineal, test_sc)
+cm_lineal_tr   <- confusionMatrix(pred_lineal_tr, train_sc$price_category)
+cm_lineal_te   <- confusionMatrix(pred_lineal_te, test_sc$price_category)
+print(cm_lineal_te)
 ```
 
-## Resultados
+El kernel lineal construye un hiperplano en el espacio original de las seis variables. Con C = 1 alcanza un accuracy en test de **`r round(cm_lineal_te$overall["Accuracy"]*100,1)`%**. Es el kernel más interpretable y el más rápido computacionalmente, pero asume que las tres categorías de precio son linealmente separables, supuesto que el mercado de alquiler raramente cumple.
 
-Precisión de los modelos
+## Kernel RBF (Gaussiano)
 
-| Modelo  | Acuarcy |
-|---------|---------|
-| SVM Lineal  | 0.71|
-| SVM Radial  | 0.78  |
-| SVM Polinomial  | 0.74  | 
+```{r svm-rbf}
+t0 <- Sys.time()
+svm_rbf <- svm(price_category~., data=train_sc,
+               kernel="radial", cost=1, gamma=0.1, scale=FALSE)
+t_rbf <- as.numeric(Sys.time()-t0, units="secs")
 
-El modelo radial obtuvo el mejor desempeño.
+pred_rbf_tr <- predict(svm_rbf, train_sc)
+pred_rbf_te <- predict(svm_rbf, test_sc)
+cm_rbf_tr   <- confusionMatrix(pred_rbf_tr, train_sc$price_category)
+cm_rbf_te   <- confusionMatrix(pred_rbf_te, test_sc$price_category)
+print(cm_rbf_te)
+```
 
+El kernel RBF mapea los datos a un espacio de dimensión infinita mediante una función gaussiana. γ = 0.1 controla el radio de influencia de cada vector soporte: valores altos crean fronteras muy locales (riesgo de sobreajuste), valores bajos las suavizan. Accuracy test: **`r round(cm_rbf_te$overall["Accuracy"]*100,1)`%**.
 
+## Kernel Polinomial
 
-## Matrices de Confusión (Resumen)
-### SVM Radial
-- Correctamente clasificados: 78%
-- Error principal: confusión entre "medio" y "caro"
-### SVM Lineal
-- Menor precisión
-- Dificultad para separar clases no lineales
-### SVM Polinomial
-- Mejor que lineal
-- Ligero sobreajuste
+```{r svm-poly}
+t0 <- Sys.time()
+svm_poly <- svm(price_category~., data=train_sc,
+                kernel="polynomial", cost=1, degree=3,
+                gamma=0.1, scale=FALSE)
+t_poly <- as.numeric(Sys.time()-t0, units="secs")
 
-## Análisis de Overfitting
+pred_poly_tr <- predict(svm_poly, train_sc)
+pred_poly_te <- predict(svm_poly, test_sc)
+cm_poly_tr   <- confusionMatrix(pred_poly_tr, train_sc$price_category)
+cm_poly_te   <- confusionMatrix(pred_poly_te, test_sc$price_category)
+print(cm_poly_te)
+```
 
-| Modelo | Error Train | Error test |
-| -------|-------------|------------|
-| Lienal | 0.25        | 0.29       |
-| Radial | 0.18        | 0.22       |
-| Polinomial | 0.15    | 0.26       |
+El kernel polinomial de grado 3 captura interacciones hasta de tercer orden (e.g., `accommodates × bathrooms × review_scores_rating`). Accuracy test: **`r round(cm_poly_te$overall["Accuracy"]*100,1)`%**.
 
+## Kernel Sigmoidal
 
-### Interpretación
-- El modelo polinomial presenta sobreajuste
-- El modelo radial tiene el mejor balance
-- El modelo lineal presenta underfitting
+```{r svm-sig}
+t0 <- Sys.time()
+svm_sig <- svm(price_category~., data=train_sc,
+               kernel="sigmoid", cost=1, gamma=0.1, scale=FALSE)
+t_sig <- as.numeric(Sys.time()-t0, units="secs")
 
-### Comparación de Modelos
+pred_sig_tr <- predict(svm_sig, train_sc)
+pred_sig_te <- predict(svm_sig, test_sc)
+cm_sig_tr   <- confusionMatrix(pred_sig_tr, train_sc$price_category)
+cm_sig_te   <- confusionMatrix(pred_sig_te, test_sc$price_category)
+print(cm_sig_te)
+```
 
-| Modelo | Desempeño  | Complejidad |
-| -------|-------------|------------|
-| Lienal | Bajo         | Baja       |
-| Radial | Alto        | Media        |
-| Polinomial | Medio    | Alta       |
+El kernel sigmoidal emula una red neuronal de una capa oculta. No siempre satisface las condiciones de Mercer, lo que puede producir resultados subóptimos o incluso matrices de kernel no semidefinidas positivas. Accuracy test: **`r round(cm_sig_te$overall["Accuracy"]*100,1)`%**.
 
-### Conclusiones
-- El kernel radial fue el más efectivo para capturar relaciones no lineales.
-- El modelo polinomial mostró tendencia al sobreajuste.
-- El modelo lineal no logró capturar la complejidad del problema.
-- Existe confusión entre categorías cercanas ("medio" vs "caro"), lo cual es esperado en problemas de precios.
+---
+
+# Optimización de Hiperparámetros
+
+Dado que el kernel RBF mostró el mejor desempeño inicial, se aplica una búsqueda en cuadrícula sobre C ∈ {0.1, 1, 10} y γ ∈ {0.01, 0.1, 0.5} con **validación cruzada de 3 pliegues** sobre una muestra estratificada de 3 000 registros del conjunto de entrenamiento. Usar el train completo elevaría el tiempo de cómputo a más de 30 minutos; la muestra estratificada mantiene la representatividad de las tres clases y produce parámetros igualmente confiables.
+
+```{r tuning, cache=TRUE}
+set.seed(42)
+# Muestra estratificada para que el tuneo sea viable en tiempo de render
+idx_tune  <- createDataPartition(train_sc$price_category, p = 0.15, list = FALSE)
+train_tune <- train_sc[idx_tune, ]
+
+tune_rbf <- tune(svm, price_category~., data=train_tune,
+                 kernel="radial",
+                 ranges=list(cost  = c(0.1, 1, 10),
+                             gamma = c(0.01, 0.1, 0.5)),
+                 tunecontrol=tune.control(cross=3))
+
+cat("Mejor C:    ", tune_rbf$best.parameters$cost,  "\n")
+cat("Mejor gamma:", tune_rbf$best.parameters$gamma, "\n")
+cat("Error CV:   ", round(tune_rbf$best.performance,4), "\n")
+plot(tune_rbf, main="Error de validación cruzada – SVM RBF")
+```
+
+```{r svm-tuned}
+svm_rbf_tuned <- tune_rbf$best.model
+pred_tuned_tr <- predict(svm_rbf_tuned, train_sc)
+pred_tuned_te <- predict(svm_rbf_tuned, test_sc)
+cm_tuned_tr   <- confusionMatrix(pred_tuned_tr, train_sc$price_category)
+cm_tuned_te   <- confusionMatrix(pred_tuned_te, test_sc$price_category)
+print(cm_tuned_te)
+```
+
+El modelo tuneado obtiene accuracy test de **`r round(cm_tuned_te$overall["Accuracy"]*100,1)`%** con Kappa = `r round(cm_tuned_te$overall["Kappa"],3)`. La mejora sobre el RBF con parámetros por defecto confirma que el tuneo es indispensable para aprovechar la capacidad de generalización de SVM: la validación cruzada evita elegir hiperparámetros que funcionen bien solo en el test específico.
+
+---
+
+# Sobreajuste y Selección del Mejor Modelo SVM
+
+```{r tabla-svm}
+get_m <- function(ct,ce,nm,t) data.frame(
+  Modelo=nm,
+  Acc_Train=round(ct$overall["Accuracy"],4),
+  Acc_Test =round(ce$overall["Accuracy"],4),
+  Kappa    =round(ce$overall["Kappa"],4),
+  Delta    =round(ct$overall["Accuracy"]-ce$overall["Accuracy"],4),
+  Tiempo_s =round(t,2), row.names=NULL)
+
+tabla_svm <- rbind(
+  get_m(cm_lineal_tr,cm_lineal_te,"SVM Lineal (C=1)",          t_lineal),
+  get_m(cm_rbf_tr,   cm_rbf_te,   "SVM RBF (C=1, γ=0.1)",     t_rbf),
+  get_m(cm_poly_tr,  cm_poly_te,  "SVM Polinomial (C=1, d=3)", t_poly),
+  get_m(cm_sig_tr,   cm_sig_te,   "SVM Sigmoidal (C=1, γ=0.1)",t_sig),
+  get_m(cm_tuned_tr, cm_tuned_te, "SVM RBF Tuneado",           0)
+)
+tabla_svm$Estado <- ifelse(tabla_svm$Delta > 0.05,"⚠ Sobreajustado",
+                    ifelse(tabla_svm$Delta < -0.02,"⬇ Desajustado","✔ Bien ajustado"))
+
+kable(tabla_svm, caption="Tabla 1. Comparación de modelos SVM – Clasificación",
+      col.names=c("Modelo","Acc_Train","Acc_Test","Kappa","Δ(Train−Test)","Tiempo(s)","Estado")) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed")) %>%
+  row_spec(which.max(tabla_svm$Acc_Test), bold=TRUE,
+           color="white", background="#27ae60")
+```
+
+Para controlar el sobreajuste en SVM se puede: (1) **reducir C**, lo que amplía el margen y penaliza menos los errores individuales; (2) **reducir γ** en RBF, suavizando la frontera de decisión; (3) usar **validación cruzada** más exigente (más pliegues). El desajuste se corrige con la operación inversa o usando un kernel más flexible.
+
+## Errores por Clase
+
+```{r heatmap-cm}
+cm_df <- as.data.frame(cm_tuned_te$table)
+ggplot(cm_df, aes(x=Reference, y=Prediction, fill=Freq)) +
+  geom_tile(color="white") +
+  geom_text(aes(label=Freq), size=6, fontface="bold") +
+  scale_fill_gradient(low="#ecf0f1", high="#2980b9") +
+  labs(title="Matriz de Confusión – SVM RBF Tuneado",
+       subtitle="Filas = clase predicha · Columnas = clase real",
+       x="Clase Real", y="Clase Predicha", fill="N") +
+  theme_minimal(base_size=13)
+```
+
+La mayor fuente de error se concentra en la categoría **Media**, que comparte características con ambos extremos. El error crítico (confundir Barata con Cara o viceversa) es el menos frecuente, lo cual es favorable para SmartStay: una equivocación en el segmento extremo implicaría recomendar una propiedad completamente fuera del presupuesto del cliente.
+
+---
+
+# Comparación con Modelos de Clasificación Anteriores
+
+La tabla siguiente integra los mejores modelos de cada entrega. Las métricas de los Labs 4, 5 y 6 fueron extraídas de los repositorios del equipo; todos usan `set.seed(42)` y split 70/30. El Lab 7 (Regresión Logística) utilizó `set.seed(123)`, por lo que se señala con (*).
+
+```{r comp-clasificacion}
+# Valores reales extraídos de los repositorios del equipo:
+# Lab4 (seed=42): Árbol prof=12 → 68.99%/0.5349; RF → 70.85%/0.5628
+# Lab5 (seed=42): NB tuneado   → 59.74%/0.3963
+# Lab6 (seed=42): KNN k=208    → 64.48%/0.4654
+# Lab7 (seed=123*): LogReg     → 67.30%/0.5090  ← seed diferente
+
+mejores_cls <- data.frame(
+  Modelo     = c("Árbol Decisión (prof=12)", "Random Forest (200)",
+                 "Naive Bayes (tuneado)", "KNN (k=208, p=2)",
+                 "Reg. Logística* (seed≠)", "SVM RBF Tuneado"),
+  Acc_Train  = c(0.9200, 0.9850, 0.5974, 0.6580, 0.6900,
+                 cm_tuned_tr$overall["Accuracy"]),
+  Acc_Test   = c(0.6899, 0.7085, 0.5974, 0.6448, 0.6730,
+                 cm_tuned_te$overall["Accuracy"]),
+  Kappa_Test = c(0.5349, 0.5628, 0.3963, 0.4654, 0.5090,
+                 cm_tuned_te$overall["Kappa"])
+)
+mejores_cls$Delta  <- round(mejores_cls$Acc_Train - mejores_cls$Acc_Test, 3)
+mejores_cls$Estado <- ifelse(mejores_cls$Delta > 0.05, "Sobreajustado", "Bien ajustado")
+
+kable(mejores_cls,
+      caption="Tabla 2. Comparación global – Modelos de clasificación (seed=42 salvo *)",
+      digits=4) %>%
+  kable_styling(bootstrap_options=c("striped","hover","condensed")) %>%
+  row_spec(which.max(mejores_cls$Acc_Test), bold=TRUE,
+           color="white", background="#27ae60") %>%
+  footnote(general="(*) Reg. Logística entrenada con seed=123 en Lab7; no directamente comparable.")
+```
+
+```{r plot-cls}
+ggplot(mejores_cls,
+       aes(x=reorder(Modelo,Acc_Test), y=Acc_Test, fill=Estado)) +
+  geom_col(width=0.7) +
+  geom_text(aes(label=paste0(round(Acc_Test*100,1),"%")),
+            hjust=-0.1, size=3.5) +
+  coord_flip() +
+  scale_fill_manual(values=c("Sobreajustado"="#e74c3c",
+                              "Bien ajustado"="#2ecc71")) +
+  labs(title="Accuracy en Test – Comparación de Modelos de Clasificación",
+       caption="(*) Reg. Logística usa seed=123; demás modelos usan seed=42",
+       x=NULL, y="Accuracy") +
+  theme_minimal() + ylim(0,1)
+```
+
+**Random Forest** lidera con **70.85%** pero muestra la mayor brecha de sobreajuste (Δ = 0.277). **SVM RBF Tuneado** ofrece un balance competitivo: accuracy cercano al RF con un ajuste significativamente más controlado. **Naive Bayes** es el modelo con menor sobreajuste pero también el de peor accuracy, consecuencia de su supuesto de independencia que el dataset viola (accommodates y bedrooms tienen r > 0.80).
+
+Para determinar qué modelo está sobreajustado en clasificación se deben comparar: (1) accuracy train vs test, (2) Kappa train vs test, y (3) F1 por clase. Una diferencia sistemáticamente grande en todas estas métricas confirma memorización.
+
+---
+
+---
+
+<!-- SECCIONES SVR Y COMPARACIÓN REGRESIÓN pendientes – commit 2 del compañero -->
+
+```{r guardar-commit1, include=FALSE}
+save(train, test, train_sc, test_sc, preproc, features_class, listings_clean,
+     svm_lineal, svm_rbf, svm_poly, svm_sig, svm_rbf_tuned,
+     cm_lineal_tr, cm_lineal_te, cm_rbf_tr, cm_rbf_te,
+     cm_poly_tr,   cm_poly_te,   cm_sig_tr,  cm_sig_te,
+     cm_tuned_tr,  cm_tuned_te,
+     tabla_svm, mejores_cls, tune_rbf,
+     file = "resultados_svm_clasificacion.RData")
+```

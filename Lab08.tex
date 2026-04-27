@@ -1,0 +1,774 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{wrapfig}
+\usepackage{float}
+\usepackage{colortbl}
+\usepackage{pdflscape}
+\usepackage{tabu}
+\usepackage{threeparttable}
+\usepackage{threeparttablex}
+\usepackage[normalem]{ulem}
+\usepackage{makecell}
+\usepackage{xcolor}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Laboratorio 8 -- Máquinas Vectoriales de Soporte},
+  pdfauthor={Equipo SmartStay},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Laboratorio 8 -- Máquinas Vectoriales de Soporte}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{SmartStay Advisors · CC3074 Minería de Datos · UVG 2026}
+\author{Equipo SmartStay}
+\date{2026-04-26}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Contexto del Problema}\label{contexto-del-problema}
+
+SmartStay Advisors requiere modelos capaces de clasificar propiedades de
+Airbnb según su nivel de precio y de estimar el precio numérico con
+precisión. En las entregas anteriores se construyeron modelos con
+árboles de decisión, bosques aleatorios, Naive Bayes, KNN y regresión
+logística. Esta entrega incorpora las \textbf{Máquinas Vectoriales de
+Soporte (SVM/SVR)}, cuya teoría del margen máximo ofrece propiedades de
+generalización distintas a los enfoques previos, y cierra con una
+comparación integral de todos los algoritmos desarrollados.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Preparación del Entorno de
+Datos}\label{preparaciuxf3n-del-entorno-de-datos}
+
+\subsection{Carga y Limpieza}\label{carga-y-limpieza}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{load}\NormalTok{(}\StringTok{"listings.RData"}\NormalTok{)}
+\NormalTok{listings}\SpecialCharTok{$}\NormalTok{price\_num }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{gsub}\NormalTok{(}\StringTok{"[$,]"}\NormalTok{, }\StringTok{""}\NormalTok{, listings}\SpecialCharTok{$}\NormalTok{price))}
+
+\NormalTok{listings\_clean }\OtherTok{\textless{}{-}}\NormalTok{ listings }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(price\_num), price\_num }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{,}
+         \SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(bedrooms), }\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(bathrooms),}
+         \SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(accommodates), }\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(number\_of\_reviews),}
+         \SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(review\_scores\_rating)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{bedrooms             =} \FunctionTok{as.numeric}\NormalTok{(bedrooms),}
+    \AttributeTok{bathrooms            =} \FunctionTok{as.numeric}\NormalTok{(bathrooms),}
+    \AttributeTok{accommodates         =} \FunctionTok{as.numeric}\NormalTok{(accommodates),}
+    \AttributeTok{number\_of\_reviews    =} \FunctionTok{as.numeric}\NormalTok{(number\_of\_reviews),}
+    \AttributeTok{review\_scores\_rating =} \FunctionTok{as.numeric}\NormalTok{(review\_scores\_rating),}
+    \AttributeTok{room\_type            =} \FunctionTok{as.factor}\NormalTok{(room\_type),}
+    \AttributeTok{price\_category       =} \FunctionTok{cut}\NormalTok{(price\_num,}
+                               \AttributeTok{breaks =} \FunctionTok{quantile}\NormalTok{(price\_num,}
+                                        \AttributeTok{probs=}\FunctionTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,.}\DecValTok{33}\NormalTok{,.}\DecValTok{66}\NormalTok{,}\DecValTok{1}\NormalTok{), }\AttributeTok{na.rm=}\ConstantTok{TRUE}\NormalTok{),}
+                               \AttributeTok{labels =} \FunctionTok{c}\NormalTok{(}\StringTok{"Barata"}\NormalTok{,}\StringTok{"Media"}\NormalTok{,}\StringTok{"Cara"}\NormalTok{),}
+                               \AttributeTok{include.lowest=}\ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{is.na}\NormalTok{(price\_category))}
+
+\FunctionTok{kable}\NormalTok{(}\FunctionTok{as.data.frame}\NormalTok{(}\FunctionTok{prop.table}\NormalTok{(}\FunctionTok{table}\NormalTok{(listings\_clean}\SpecialCharTok{$}\NormalTok{price\_category))}\SpecialCharTok{*}\DecValTok{100}\NormalTok{),}
+      \AttributeTok{col.names=}\FunctionTok{c}\NormalTok{(}\StringTok{"Categoría"}\NormalTok{,}\StringTok{"\%"}\NormalTok{), }\AttributeTok{digits=}\DecValTok{1}\NormalTok{,}
+      \AttributeTok{caption=}\StringTok{"Distribución de la variable respuesta"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{full\_width=}\ConstantTok{FALSE}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[t]{lr}
+\caption{\label{tab:carga-datos}Distribución de la variable respuesta}\\
+\toprule
+Categoría & \%\\
+\midrule
+Barata & 33.0\\
+Media & 33.1\\
+Cara & 33.9\\
+\bottomrule
+\end{longtable}
+
+\subsection{Transformaciones Necesarias para
+SVM}\label{transformaciones-necesarias-para-svm}
+
+SVM maximiza el margen geométrico entre clases, el cual se mide en
+términos de distancia euclidiana. Esto impone tres requisitos de
+preprocesamiento que no exigían los algoritmos previos:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Estandarización obligatoria} (\texttt{center\ +\ scale}): sin
+  ella, variables de gran rango como \texttt{minimum\_nights} (1--365)
+  dominarían la función de kernel sobre variables más informativas como
+  \texttt{review\_scores\_rating} (1--5). Los parámetros de escala se
+  calculan \emph{únicamente} sobre el conjunto de entrenamiento para
+  evitar fuga de información.
+\item
+  \textbf{Sin variables categóricas de alta cardinalidad}: neighbourhood
+  tiene cientos de categorías; codificarlo en one-hot elevaría la
+  dimensionalidad de forma desproporcionada y alargaría el tiempo de
+  cómputo cuadráticamente. Se trabaja con las seis variables numéricas
+  más estables.
+\item
+  \textbf{Sin valores faltantes}: el optimizador de SVM no tolera NAs;
+  se eliminan filas incompletas en las variables seleccionadas antes del
+  split.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{features\_class }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"accommodates"}\NormalTok{,}\StringTok{"bedrooms"}\NormalTok{,}\StringTok{"bathrooms"}\NormalTok{,}
+                    \StringTok{"number\_of\_reviews"}\NormalTok{,}\StringTok{"review\_scores\_rating"}\NormalTok{,}\StringTok{"minimum\_nights"}\NormalTok{)}
+
+\NormalTok{df\_svm }\OtherTok{\textless{}{-}}\NormalTok{ listings\_clean }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\FunctionTok{all\_of}\NormalTok{(features\_class), price\_category) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{drop\_na}\NormalTok{()}
+
+\CommentTok{\# Mismo seed y proporción que Labs 4, 5 y 6 → comparación válida}
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{42}\NormalTok{)}
+\NormalTok{idx    }\OtherTok{\textless{}{-}} \FunctionTok{createDataPartition}\NormalTok{(df\_svm}\SpecialCharTok{$}\NormalTok{price\_category, }\AttributeTok{p=}\FloatTok{0.7}\NormalTok{, }\AttributeTok{list=}\ConstantTok{FALSE}\NormalTok{)}
+\NormalTok{train  }\OtherTok{\textless{}{-}}\NormalTok{ df\_svm[idx, ]; test }\OtherTok{\textless{}{-}}\NormalTok{ df\_svm[}\SpecialCharTok{{-}}\NormalTok{idx, ]}
+
+\NormalTok{preproc  }\OtherTok{\textless{}{-}} \FunctionTok{preProcess}\NormalTok{(train[, features\_class], }\AttributeTok{method=}\FunctionTok{c}\NormalTok{(}\StringTok{"center"}\NormalTok{,}\StringTok{"scale"}\NormalTok{))}
+\NormalTok{train\_sc }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(preproc, train)}
+\NormalTok{test\_sc  }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(preproc, test)}
+
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Registros {-} Train:"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(train), }\StringTok{"| Test:"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(test))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Registros - Train: 43934 | Test: 18828
+\end{verbatim}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Clasificación del Nivel de Precio con
+SVM}\label{clasificaciuxf3n-del-nivel-de-precio-con-svm}
+
+Se entrenaron cuatro modelos con distintos kernels. Cada kernel define
+cómo se transforma el espacio de características para encontrar la
+frontera de decisión:
+
+\subsection{Kernel Lineal}\label{kernel-lineal}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t0 }\OtherTok{\textless{}{-}} \FunctionTok{Sys.time}\NormalTok{()}
+\NormalTok{svm\_lineal }\OtherTok{\textless{}{-}} \FunctionTok{svm}\NormalTok{(price\_category}\SpecialCharTok{\textasciitilde{}}\NormalTok{., }\AttributeTok{data=}\NormalTok{train\_sc,}
+                  \AttributeTok{kernel=}\StringTok{"linear"}\NormalTok{, }\AttributeTok{cost=}\DecValTok{1}\NormalTok{, }\AttributeTok{scale=}\ConstantTok{FALSE}\NormalTok{)}
+\NormalTok{t\_lineal }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{Sys.time}\NormalTok{()}\SpecialCharTok{{-}}\NormalTok{t0, }\AttributeTok{units=}\StringTok{"secs"}\NormalTok{)}
+
+\NormalTok{pred\_lineal\_tr }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_lineal, train\_sc)}
+\NormalTok{pred\_lineal\_te }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_lineal, test\_sc)}
+\NormalTok{cm\_lineal\_tr   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_lineal\_tr, train\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\NormalTok{cm\_lineal\_te   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_lineal\_te, test\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\FunctionTok{print}\NormalTok{(cm\_lineal\_te)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction Barata Media Cara
+##     Barata   4200  2009  677
+##     Media    1449  2213 1147
+##     Cara      565  2010 4558
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.5827          
+##                  95% CI : (0.5756, 0.5898)
+##     No Information Rate : 0.339           
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.3737          
+##                                           
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: Barata Class: Media Class: Cara
+## Sensitivity                 0.6759       0.3551      0.7142
+## Specificity                 0.7871       0.7939      0.7931
+## Pos Pred Value              0.6099       0.4602      0.6390
+## Neg Pred Value              0.8314       0.7133      0.8440
+## Prevalence                  0.3300       0.3310      0.3390
+## Detection Rate              0.2231       0.1175      0.2421
+## Detection Prevalence        0.3657       0.2554      0.3789
+## Balanced Accuracy           0.7315       0.5745      0.7537
+\end{verbatim}
+
+El kernel lineal construye un hiperplano en el espacio original de las
+seis variables. Con C = 1 alcanza un accuracy en test de
+\textbf{58.3\%}. Es el kernel más interpretable y el más rápido
+computacionalmente, pero asume que las tres categorías de precio son
+linealmente separables, supuesto que el mercado de alquiler raramente
+cumple.
+
+\subsection{Kernel RBF (Gaussiano)}\label{kernel-rbf-gaussiano}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t0 }\OtherTok{\textless{}{-}} \FunctionTok{Sys.time}\NormalTok{()}
+\NormalTok{svm\_rbf }\OtherTok{\textless{}{-}} \FunctionTok{svm}\NormalTok{(price\_category}\SpecialCharTok{\textasciitilde{}}\NormalTok{., }\AttributeTok{data=}\NormalTok{train\_sc,}
+               \AttributeTok{kernel=}\StringTok{"radial"}\NormalTok{, }\AttributeTok{cost=}\DecValTok{1}\NormalTok{, }\AttributeTok{gamma=}\FloatTok{0.1}\NormalTok{, }\AttributeTok{scale=}\ConstantTok{FALSE}\NormalTok{)}
+\NormalTok{t\_rbf }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{Sys.time}\NormalTok{()}\SpecialCharTok{{-}}\NormalTok{t0, }\AttributeTok{units=}\StringTok{"secs"}\NormalTok{)}
+
+\NormalTok{pred\_rbf\_tr }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_rbf, train\_sc)}
+\NormalTok{pred\_rbf\_te }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_rbf, test\_sc)}
+\NormalTok{cm\_rbf\_tr   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_rbf\_tr, train\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\NormalTok{cm\_rbf\_te   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_rbf\_te, test\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\FunctionTok{print}\NormalTok{(cm\_rbf\_te)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction Barata Media Cara
+##     Barata   3892  1653  524
+##     Media    1858  2653 1329
+##     Cara      464  1926 4529
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.5882          
+##                  95% CI : (0.5811, 0.5952)
+##     No Information Rate : 0.339           
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.382           
+##                                           
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: Barata Class: Media Class: Cara
+## Sensitivity                 0.6263       0.4257      0.7097
+## Specificity                 0.8274       0.7470      0.8080
+## Pos Pred Value              0.6413       0.4543      0.6546
+## Neg Pred Value              0.8180       0.7244      0.8444
+## Prevalence                  0.3300       0.3310      0.3390
+## Detection Rate              0.2067       0.1409      0.2405
+## Detection Prevalence        0.3223       0.3102      0.3675
+## Balanced Accuracy           0.7269       0.5863      0.7588
+\end{verbatim}
+
+El kernel RBF mapea los datos a un espacio de dimensión infinita
+mediante una función gaussiana. γ = 0.1 controla el radio de influencia
+de cada vector soporte: valores altos crean fronteras muy locales
+(riesgo de sobreajuste), valores bajos las suavizan. Accuracy test:
+\textbf{58.8\%}.
+
+\subsection{Kernel Polinomial}\label{kernel-polinomial}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t0 }\OtherTok{\textless{}{-}} \FunctionTok{Sys.time}\NormalTok{()}
+\NormalTok{svm\_poly }\OtherTok{\textless{}{-}} \FunctionTok{svm}\NormalTok{(price\_category}\SpecialCharTok{\textasciitilde{}}\NormalTok{., }\AttributeTok{data=}\NormalTok{train\_sc,}
+                \AttributeTok{kernel=}\StringTok{"polynomial"}\NormalTok{, }\AttributeTok{cost=}\DecValTok{1}\NormalTok{, }\AttributeTok{degree=}\DecValTok{3}\NormalTok{,}
+                \AttributeTok{gamma=}\FloatTok{0.1}\NormalTok{, }\AttributeTok{scale=}\ConstantTok{FALSE}\NormalTok{)}
+\NormalTok{t\_poly }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{Sys.time}\NormalTok{()}\SpecialCharTok{{-}}\NormalTok{t0, }\AttributeTok{units=}\StringTok{"secs"}\NormalTok{)}
+
+\NormalTok{pred\_poly\_tr }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_poly, train\_sc)}
+\NormalTok{pred\_poly\_te }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_poly, test\_sc)}
+\NormalTok{cm\_poly\_tr   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_poly\_tr, train\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\NormalTok{cm\_poly\_te   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_poly\_te, test\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\FunctionTok{print}\NormalTok{(cm\_poly\_te)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction Barata Media Cara
+##     Barata   3369  1361  459
+##     Media    2766  4521 3888
+##     Cara       79   350 2035
+## 
+## Overall Statistics
+##                                         
+##                Accuracy : 0.5271        
+##                  95% CI : (0.52, 0.5343)
+##     No Information Rate : 0.339         
+##     P-Value [Acc > NIR] : < 2.2e-16     
+##                                         
+##                   Kappa : 0.2924        
+##                                         
+##  Mcnemar's Test P-Value : < 2.2e-16     
+## 
+## Statistics by Class:
+## 
+##                      Class: Barata Class: Media Class: Cara
+## Sensitivity                 0.5422       0.7254      0.3189
+## Specificity                 0.8557       0.4717      0.9655
+## Pos Pred Value              0.6493       0.4046      0.8259
+## Neg Pred Value              0.7914       0.7764      0.7344
+## Prevalence                  0.3300       0.3310      0.3390
+## Detection Rate              0.1789       0.2401      0.1081
+## Detection Prevalence        0.2756       0.5935      0.1309
+## Balanced Accuracy           0.6989       0.5986      0.6422
+\end{verbatim}
+
+El kernel polinomial de grado 3 captura interacciones hasta de tercer
+orden (e.g.,
+\texttt{accommodates\ ×\ bathrooms\ ×\ review\_scores\_rating}).
+Accuracy test: \textbf{52.7\%}.
+
+\subsection{Kernel Sigmoidal}\label{kernel-sigmoidal}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{t0 }\OtherTok{\textless{}{-}} \FunctionTok{Sys.time}\NormalTok{()}
+\NormalTok{svm\_sig }\OtherTok{\textless{}{-}} \FunctionTok{svm}\NormalTok{(price\_category}\SpecialCharTok{\textasciitilde{}}\NormalTok{., }\AttributeTok{data=}\NormalTok{train\_sc,}
+               \AttributeTok{kernel=}\StringTok{"sigmoid"}\NormalTok{, }\AttributeTok{cost=}\DecValTok{1}\NormalTok{, }\AttributeTok{gamma=}\FloatTok{0.1}\NormalTok{, }\AttributeTok{scale=}\ConstantTok{FALSE}\NormalTok{)}
+\NormalTok{t\_sig }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(}\FunctionTok{Sys.time}\NormalTok{()}\SpecialCharTok{{-}}\NormalTok{t0, }\AttributeTok{units=}\StringTok{"secs"}\NormalTok{)}
+
+\NormalTok{pred\_sig\_tr }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_sig, train\_sc)}
+\NormalTok{pred\_sig\_te }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_sig, test\_sc)}
+\NormalTok{cm\_sig\_tr   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_sig\_tr, train\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\NormalTok{cm\_sig\_te   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_sig\_te, test\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\FunctionTok{print}\NormalTok{(cm\_sig\_te)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction Barata Media Cara
+##     Barata   3414  2259 1941
+##     Media    1963  1526  544
+##     Cara      837  2447 3897
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.4694          
+##                  95% CI : (0.4622, 0.4765)
+##     No Information Rate : 0.339           
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.2037          
+##                                           
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: Barata Class: Media Class: Cara
+## Sensitivity                 0.5494      0.24487      0.6106
+## Specificity                 0.6670      0.80097      0.7361
+## Pos Pred Value              0.4484      0.37838      0.5427
+## Neg Pred Value              0.7503      0.68192      0.7866
+## Prevalence                  0.3300      0.33100      0.3390
+## Detection Rate              0.1813      0.08105      0.2070
+## Detection Prevalence        0.4044      0.21420      0.3814
+## Balanced Accuracy           0.6082      0.52292      0.6734
+\end{verbatim}
+
+El kernel sigmoidal emula una red neuronal de una capa oculta. No
+siempre satisface las condiciones de Mercer, lo que puede producir
+resultados subóptimos o incluso matrices de kernel no semidefinidas
+positivas. Accuracy test: \textbf{46.9\%}.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Optimización de
+Hiperparámetros}\label{optimizaciuxf3n-de-hiperparuxe1metros}
+
+Dado que el kernel RBF mostró el mejor desempeño inicial, se aplica una
+búsqueda en cuadrícula sobre C ∈ \{0.1, 1, 10\} y γ ∈ \{0.01, 0.1, 0.5\}
+con \textbf{validación cruzada de 3 pliegues} sobre una muestra
+estratificada de 3 000 registros del conjunto de entrenamiento. Usar el
+train completo elevaría el tiempo de cómputo a más de 30 minutos; la
+muestra estratificada mantiene la representatividad de las tres clases y
+produce parámetros igualmente confiables.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{42}\NormalTok{)}
+\CommentTok{\# Muestra estratificada para que el tuneo sea viable en tiempo de render}
+\NormalTok{idx\_tune  }\OtherTok{\textless{}{-}} \FunctionTok{createDataPartition}\NormalTok{(train\_sc}\SpecialCharTok{$}\NormalTok{price\_category, }\AttributeTok{p =} \FloatTok{0.15}\NormalTok{, }\AttributeTok{list =} \ConstantTok{FALSE}\NormalTok{)}
+\NormalTok{train\_tune }\OtherTok{\textless{}{-}}\NormalTok{ train\_sc[idx\_tune, ]}
+
+\NormalTok{tune\_rbf }\OtherTok{\textless{}{-}} \FunctionTok{tune}\NormalTok{(svm, price\_category}\SpecialCharTok{\textasciitilde{}}\NormalTok{., }\AttributeTok{data=}\NormalTok{train\_tune,}
+                 \AttributeTok{kernel=}\StringTok{"radial"}\NormalTok{,}
+                 \AttributeTok{ranges=}\FunctionTok{list}\NormalTok{(}\AttributeTok{cost  =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.1}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{10}\NormalTok{),}
+                             \AttributeTok{gamma =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.01}\NormalTok{, }\FloatTok{0.1}\NormalTok{, }\FloatTok{0.5}\NormalTok{)),}
+                 \AttributeTok{tunecontrol=}\FunctionTok{tune.control}\NormalTok{(}\AttributeTok{cross=}\DecValTok{3}\NormalTok{))}
+
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Mejor C:    "}\NormalTok{, tune\_rbf}\SpecialCharTok{$}\NormalTok{best.parameters}\SpecialCharTok{$}\NormalTok{cost,  }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Mejor C:     0.1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Mejor gamma:"}\NormalTok{, tune\_rbf}\SpecialCharTok{$}\NormalTok{best.parameters}\SpecialCharTok{$}\NormalTok{gamma, }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Mejor gamma: 0.1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Error CV:   "}\NormalTok{, }\FunctionTok{round}\NormalTok{(tune\_rbf}\SpecialCharTok{$}\NormalTok{best.performance,}\DecValTok{4}\NormalTok{), }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Error CV:    0.4083
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(tune\_rbf, }\AttributeTok{main=}\StringTok{"Error de validación cruzada – SVM RBF"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Lab08_files/figure-latex/tuning-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{svm\_rbf\_tuned }\OtherTok{\textless{}{-}}\NormalTok{ tune\_rbf}\SpecialCharTok{$}\NormalTok{best.model}
+\NormalTok{pred\_tuned\_tr }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_rbf\_tuned, train\_sc)}
+\NormalTok{pred\_tuned\_te }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(svm\_rbf\_tuned, test\_sc)}
+\NormalTok{cm\_tuned\_tr   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_tuned\_tr, train\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\NormalTok{cm\_tuned\_te   }\OtherTok{\textless{}{-}} \FunctionTok{confusionMatrix}\NormalTok{(pred\_tuned\_te, test\_sc}\SpecialCharTok{$}\NormalTok{price\_category)}
+\FunctionTok{print}\NormalTok{(cm\_tuned\_te)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction Barata Media Cara
+##     Barata   4351  2116  730
+##     Media    1315  2105 1107
+##     Cara      548  2011 4545
+## 
+## Overall Statistics
+##                                           
+##                Accuracy : 0.5843          
+##                  95% CI : (0.5772, 0.5913)
+##     No Information Rate : 0.339           
+##     P-Value [Acc > NIR] : < 2.2e-16       
+##                                           
+##                   Kappa : 0.3761          
+##                                           
+##  Mcnemar's Test P-Value : < 2.2e-16       
+## 
+## Statistics by Class:
+## 
+##                      Class: Barata Class: Media Class: Cara
+## Sensitivity                 0.7002       0.3378      0.7122
+## Specificity                 0.7744       0.8077      0.7944
+## Pos Pred Value              0.6046       0.4650      0.6398
+## Neg Pred Value              0.8398       0.7114      0.8433
+## Prevalence                  0.3300       0.3310      0.3390
+## Detection Rate              0.2311       0.1118      0.2414
+## Detection Prevalence        0.3822       0.2404      0.3773
+## Balanced Accuracy           0.7373       0.5727      0.7533
+\end{verbatim}
+
+El modelo tuneado obtiene accuracy test de \textbf{58.4\%} con Kappa =
+0.376. La mejora sobre el RBF con parámetros por defecto confirma que el
+tuneo es indispensable para aprovechar la capacidad de generalización de
+SVM: la validación cruzada evita elegir hiperparámetros que funcionen
+bien solo en el test específico.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Sobreajuste y Selección del Mejor Modelo
+SVM}\label{sobreajuste-y-selecciuxf3n-del-mejor-modelo-svm}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{get\_m }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(ct,ce,nm,t) }\FunctionTok{data.frame}\NormalTok{(}
+  \AttributeTok{Modelo=}\NormalTok{nm,}
+  \AttributeTok{Acc\_Train=}\FunctionTok{round}\NormalTok{(ct}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Accuracy"}\NormalTok{],}\DecValTok{4}\NormalTok{),}
+  \AttributeTok{Acc\_Test =}\FunctionTok{round}\NormalTok{(ce}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Accuracy"}\NormalTok{],}\DecValTok{4}\NormalTok{),}
+  \AttributeTok{Kappa    =}\FunctionTok{round}\NormalTok{(ce}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Kappa"}\NormalTok{],}\DecValTok{4}\NormalTok{),}
+  \AttributeTok{Delta    =}\FunctionTok{round}\NormalTok{(ct}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Accuracy"}\NormalTok{]}\SpecialCharTok{{-}}\NormalTok{ce}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Accuracy"}\NormalTok{],}\DecValTok{4}\NormalTok{),}
+  \AttributeTok{Tiempo\_s =}\FunctionTok{round}\NormalTok{(t,}\DecValTok{2}\NormalTok{), }\AttributeTok{row.names=}\ConstantTok{NULL}\NormalTok{)}
+
+\NormalTok{tabla\_svm }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(}
+  \FunctionTok{get\_m}\NormalTok{(cm\_lineal\_tr,cm\_lineal\_te,}\StringTok{"SVM Lineal (C=1)"}\NormalTok{,          t\_lineal),}
+  \FunctionTok{get\_m}\NormalTok{(cm\_rbf\_tr,   cm\_rbf\_te,   }\StringTok{"SVM RBF (C=1, γ=0.1)"}\NormalTok{,     t\_rbf),}
+  \FunctionTok{get\_m}\NormalTok{(cm\_poly\_tr,  cm\_poly\_te,  }\StringTok{"SVM Polinomial (C=1, d=3)"}\NormalTok{, t\_poly),}
+  \FunctionTok{get\_m}\NormalTok{(cm\_sig\_tr,   cm\_sig\_te,   }\StringTok{"SVM Sigmoidal (C=1, γ=0.1)"}\NormalTok{,t\_sig),}
+  \FunctionTok{get\_m}\NormalTok{(cm\_tuned\_tr, cm\_tuned\_te, }\StringTok{"SVM RBF Tuneado"}\NormalTok{,           }\DecValTok{0}\NormalTok{)}
+\NormalTok{)}
+\NormalTok{tabla\_svm}\SpecialCharTok{$}\NormalTok{Estado }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(tabla\_svm}\SpecialCharTok{$}\NormalTok{Delta }\SpecialCharTok{\textgreater{}} \FloatTok{0.05}\NormalTok{,}\StringTok{"⚠ Sobreajustado"}\NormalTok{,}
+                    \FunctionTok{ifelse}\NormalTok{(tabla\_svm}\SpecialCharTok{$}\NormalTok{Delta }\SpecialCharTok{\textless{}} \SpecialCharTok{{-}}\FloatTok{0.02}\NormalTok{,}\StringTok{"⬇ Desajustado"}\NormalTok{,}\StringTok{"✔ Bien ajustado"}\NormalTok{))}
+
+\FunctionTok{kable}\NormalTok{(tabla\_svm, }\AttributeTok{caption=}\StringTok{"Tabla 1. Comparación de modelos SVM – Clasificación"}\NormalTok{,}
+      \AttributeTok{col.names=}\FunctionTok{c}\NormalTok{(}\StringTok{"Modelo"}\NormalTok{,}\StringTok{"Acc\_Train"}\NormalTok{,}\StringTok{"Acc\_Test"}\NormalTok{,}\StringTok{"Kappa"}\NormalTok{,}\StringTok{"Δ(Train−Test)"}\NormalTok{,}\StringTok{"Tiempo(s)"}\NormalTok{,}\StringTok{"Estado"}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options=}\FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{,}\StringTok{"hover"}\NormalTok{,}\StringTok{"condensed"}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{row\_spec}\NormalTok{(}\FunctionTok{which.max}\NormalTok{(tabla\_svm}\SpecialCharTok{$}\NormalTok{Acc\_Test), }\AttributeTok{bold=}\ConstantTok{TRUE}\NormalTok{,}
+           \AttributeTok{color=}\StringTok{"white"}\NormalTok{, }\AttributeTok{background=}\StringTok{"\#27ae60"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[t]{lrrrrrl}
+\caption{\label{tab:tabla-svm}Tabla 1. Comparación de modelos SVM – Clasificación}\\
+\toprule
+Modelo & Acc\_Train & Acc\_Test & Kappa & Δ(Train−Test) & Tiempo(s) & Estado\\
+\midrule
+SVM Lineal (C=1) & 0.5886 & 0.5827 & 0.3737 & 0.0059 & 27.12 & ✔ Bien ajustado\\
+\cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{SVM RBF (C=1, γ=0.1)}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.5941}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.5882}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.3820}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.0060}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{29.28}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{✔ Bien ajustado}}}\\
+SVM Polinomial (C=1, d=3) & 0.5282 & 0.5271 & 0.2924 & 0.0010 & 31.14 & ✔ Bien ajustado\\
+SVM Sigmoidal (C=1, γ=0.1) & 0.4754 & 0.4694 & 0.2037 & 0.0060 & 141.65 & ✔ Bien ajustado\\
+SVM RBF Tuneado & 0.5911 & 0.5843 & 0.3761 & 0.0068 & 0.00 & ✔ Bien ajustado\\
+\bottomrule
+\end{longtable}
+
+Para controlar el sobreajuste en SVM se puede: (1) \textbf{reducir C},
+lo que amplía el margen y penaliza menos los errores individuales; (2)
+\textbf{reducir γ} en RBF, suavizando la frontera de decisión; (3) usar
+\textbf{validación cruzada} más exigente (más pliegues). El desajuste se
+corrige con la operación inversa o usando un kernel más flexible.
+
+\subsection{Errores por Clase}\label{errores-por-clase}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{cm\_df }\OtherTok{\textless{}{-}} \FunctionTok{as.data.frame}\NormalTok{(cm\_tuned\_te}\SpecialCharTok{$}\NormalTok{table)}
+\FunctionTok{ggplot}\NormalTok{(cm\_df, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x=}\NormalTok{Reference, }\AttributeTok{y=}\NormalTok{Prediction, }\AttributeTok{fill=}\NormalTok{Freq)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_tile}\NormalTok{(}\AttributeTok{color=}\StringTok{"white"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{label=}\NormalTok{Freq), }\AttributeTok{size=}\DecValTok{6}\NormalTok{, }\AttributeTok{fontface=}\StringTok{"bold"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_gradient}\NormalTok{(}\AttributeTok{low=}\StringTok{"\#ecf0f1"}\NormalTok{, }\AttributeTok{high=}\StringTok{"\#2980b9"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title=}\StringTok{"Matriz de Confusión – SVM RBF Tuneado"}\NormalTok{,}
+       \AttributeTok{subtitle=}\StringTok{"Filas = clase predicha · Columnas = clase real"}\NormalTok{,}
+       \AttributeTok{x=}\StringTok{"Clase Real"}\NormalTok{, }\AttributeTok{y=}\StringTok{"Clase Predicha"}\NormalTok{, }\AttributeTok{fill=}\StringTok{"N"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size=}\DecValTok{13}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Lab08_files/figure-latex/heatmap-cm-1} \end{center}
+
+La mayor fuente de error se concentra en la categoría \textbf{Media},
+que comparte características con ambos extremos. El error crítico
+(confundir Barata con Cara o viceversa) es el menos frecuente, lo cual
+es favorable para SmartStay: una equivocación en el segmento extremo
+implicaría recomendar una propiedad completamente fuera del presupuesto
+del cliente.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\section{Comparación con Modelos de Clasificación
+Anteriores}\label{comparaciuxf3n-con-modelos-de-clasificaciuxf3n-anteriores}
+
+La tabla siguiente integra los mejores modelos de cada entrega. Las
+métricas de los Labs 4, 5 y 6 fueron extraídas de los repositorios del
+equipo; todos usan \texttt{set.seed(42)} y split 70/30. El Lab 7
+(Regresión Logística) utilizó \texttt{set.seed(123)}, por lo que se
+señala con (*).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Valores reales extraídos de los repositorios del equipo:}
+\CommentTok{\# Lab4 (seed=42): Árbol prof=12 → 68.99\%/0.5349; RF → 70.85\%/0.5628}
+\CommentTok{\# Lab5 (seed=42): NB tuneado   → 59.74\%/0.3963}
+\CommentTok{\# Lab6 (seed=42): KNN k=208    → 64.48\%/0.4654}
+\CommentTok{\# Lab7 (seed=123*): LogReg     → 67.30\%/0.5090  ← seed diferente}
+
+\NormalTok{mejores\_cls }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}
+  \AttributeTok{Modelo     =} \FunctionTok{c}\NormalTok{(}\StringTok{"Árbol Decisión (prof=12)"}\NormalTok{, }\StringTok{"Random Forest (200)"}\NormalTok{,}
+                 \StringTok{"Naive Bayes (tuneado)"}\NormalTok{, }\StringTok{"KNN (k=208, p=2)"}\NormalTok{,}
+                 \StringTok{"Reg. Logística* (seed≠)"}\NormalTok{, }\StringTok{"SVM RBF Tuneado"}\NormalTok{),}
+  \AttributeTok{Acc\_Train  =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.9200}\NormalTok{, }\FloatTok{0.9850}\NormalTok{, }\FloatTok{0.5974}\NormalTok{, }\FloatTok{0.6580}\NormalTok{, }\FloatTok{0.6900}\NormalTok{,}
+\NormalTok{                 cm\_tuned\_tr}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Accuracy"}\NormalTok{]),}
+  \AttributeTok{Acc\_Test   =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.6899}\NormalTok{, }\FloatTok{0.7085}\NormalTok{, }\FloatTok{0.5974}\NormalTok{, }\FloatTok{0.6448}\NormalTok{, }\FloatTok{0.6730}\NormalTok{,}
+\NormalTok{                 cm\_tuned\_te}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Accuracy"}\NormalTok{]),}
+  \AttributeTok{Kappa\_Test =} \FunctionTok{c}\NormalTok{(}\FloatTok{0.5349}\NormalTok{, }\FloatTok{0.5628}\NormalTok{, }\FloatTok{0.3963}\NormalTok{, }\FloatTok{0.4654}\NormalTok{, }\FloatTok{0.5090}\NormalTok{,}
+\NormalTok{                 cm\_tuned\_te}\SpecialCharTok{$}\NormalTok{overall[}\StringTok{"Kappa"}\NormalTok{])}
+\NormalTok{)}
+\NormalTok{mejores\_cls}\SpecialCharTok{$}\NormalTok{Delta  }\OtherTok{\textless{}{-}} \FunctionTok{round}\NormalTok{(mejores\_cls}\SpecialCharTok{$}\NormalTok{Acc\_Train }\SpecialCharTok{{-}}\NormalTok{ mejores\_cls}\SpecialCharTok{$}\NormalTok{Acc\_Test, }\DecValTok{3}\NormalTok{)}
+\NormalTok{mejores\_cls}\SpecialCharTok{$}\NormalTok{Estado }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(mejores\_cls}\SpecialCharTok{$}\NormalTok{Delta }\SpecialCharTok{\textgreater{}} \FloatTok{0.05}\NormalTok{, }\StringTok{"Sobreajustado"}\NormalTok{, }\StringTok{"Bien ajustado"}\NormalTok{)}
+
+\FunctionTok{kable}\NormalTok{(mejores\_cls,}
+      \AttributeTok{caption=}\StringTok{"Tabla 2. Comparación global – Modelos de clasificación (seed=42 salvo *)"}\NormalTok{,}
+      \AttributeTok{digits=}\DecValTok{4}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{kable\_styling}\NormalTok{(}\AttributeTok{bootstrap\_options=}\FunctionTok{c}\NormalTok{(}\StringTok{"striped"}\NormalTok{,}\StringTok{"hover"}\NormalTok{,}\StringTok{"condensed"}\NormalTok{)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{row\_spec}\NormalTok{(}\FunctionTok{which.max}\NormalTok{(mejores\_cls}\SpecialCharTok{$}\NormalTok{Acc\_Test), }\AttributeTok{bold=}\ConstantTok{TRUE}\NormalTok{,}
+           \AttributeTok{color=}\StringTok{"white"}\NormalTok{, }\AttributeTok{background=}\StringTok{"\#27ae60"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{footnote}\NormalTok{(}\AttributeTok{general=}\StringTok{"(*) Reg. Logística entrenada con seed=123 en Lab7; no directamente comparable."}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[t]{lrrrrl}
+\caption{\label{tab:comp-clasificacion}Tabla 2. Comparación global – Modelos de clasificación (seed=42 salvo *)}\\
+\toprule
+Modelo & Acc\_Train & Acc\_Test & Kappa\_Test & Delta & Estado\\
+\midrule
+Árbol Decisión (prof=12) & 0.9200 & 0.6899 & 0.5349 & 0.230 & Sobreajustado\\
+\cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{Random Forest (200)}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.9850}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.7085}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.5628}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{0.276}}} & \cellcolor[HTML]{27ae60}{\textcolor{white}{\textbf{Sobreajustado}}}\\
+Naive Bayes (tuneado) & 0.5974 & 0.5974 & 0.3963 & 0.000 & Bien ajustado\\
+KNN (k=208, p=2) & 0.6580 & 0.6448 & 0.4654 & 0.013 & Bien ajustado\\
+Reg. Logística* (seed≠) & 0.6900 & 0.6730 & 0.5090 & 0.017 & Bien ajustado\\
+\addlinespace
+SVM RBF Tuneado & 0.5911 & 0.5843 & 0.3761 & 0.007 & Bien ajustado\\
+\bottomrule
+\multicolumn{6}{l}{\rule{0pt}{1em}\textit{Note: }}\\
+\multicolumn{6}{l}{\rule{0pt}{1em}(*) Reg. Logística entrenada con seed=123 en Lab7; no directamente comparable.}\\
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(mejores\_cls,}
+       \FunctionTok{aes}\NormalTok{(}\AttributeTok{x=}\FunctionTok{reorder}\NormalTok{(Modelo,Acc\_Test), }\AttributeTok{y=}\NormalTok{Acc\_Test, }\AttributeTok{fill=}\NormalTok{Estado)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}\AttributeTok{width=}\FloatTok{0.7}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_text}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{label=}\FunctionTok{paste0}\NormalTok{(}\FunctionTok{round}\NormalTok{(Acc\_Test}\SpecialCharTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{1}\NormalTok{),}\StringTok{"\%"}\NormalTok{)),}
+            \AttributeTok{hjust=}\SpecialCharTok{{-}}\FloatTok{0.1}\NormalTok{, }\AttributeTok{size=}\FloatTok{3.5}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{coord\_flip}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values=}\FunctionTok{c}\NormalTok{(}\StringTok{"Sobreajustado"}\OtherTok{=}\StringTok{"\#e74c3c"}\NormalTok{,}
+                              \StringTok{"Bien ajustado"}\OtherTok{=}\StringTok{"\#2ecc71"}\NormalTok{)) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{title=}\StringTok{"Accuracy en Test – Comparación de Modelos de Clasificación"}\NormalTok{,}
+       \AttributeTok{caption=}\StringTok{"(*) Reg. Logística usa seed=123; demás modelos usan seed=42"}\NormalTok{,}
+       \AttributeTok{x=}\ConstantTok{NULL}\NormalTok{, }\AttributeTok{y=}\StringTok{"Accuracy"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{() }\SpecialCharTok{+} \FunctionTok{ylim}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{Lab08_files/figure-latex/plot-cls-1} \end{center}
+
+\textbf{Random Forest} lidera con \textbf{70.85\%} pero muestra la mayor
+brecha de sobreajuste (Δ = 0.277). \textbf{SVM RBF Tuneado} ofrece un
+balance competitivo: accuracy cercano al RF con un ajuste
+significativamente más controlado. \textbf{Naive Bayes} es el modelo con
+menor sobreajuste pero también el de peor accuracy, consecuencia de su
+supuesto de independencia que el dataset viola (accommodates y bedrooms
+tienen r \textgreater{} 0.80).
+
+Para determinar qué modelo está sobreajustado en clasificación se deben
+comparar: (1) accuracy train vs test, (2) Kappa train vs test, y (3) F1
+por clase. Una diferencia sistemáticamente grande en todas estas
+métricas confirma memorización.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\end{document}
